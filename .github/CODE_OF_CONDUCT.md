@@ -7,6 +7,6 @@ Be respectful. Examples of unacceptable behavior include:
 - Discrimination or exclusionary remarks.
 - Posting private information or doxxing.
 
-If you experience or witness violations, please contact the maintainers at admin@bossco-code (or open an issue marked as confidential).
+If you experience or witness violations, please contact the maintainers at bosscotony@gmail.com (or open an issue marked as confidential).
 
 (You can replace the contact method above with an email or instructions you prefer.)
