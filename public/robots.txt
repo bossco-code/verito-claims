@@ -1,1 +1,11 @@
-[FILE_TOO_LARGE]: The combined read_files output exceeded the 100,000 character hard limit. This file was truncated after 0 characters. Read it separately or use code_search for the relevant section.
+# Verito — robots.txt
+# Generated from src/seo.config.ts (SEO_CONFIG / PRIVATE_PATH_PREFIXES /
+# ROBOTS_DISALLOW). Keep in sync with src/convex/seo/engine/robots.ts.
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /case
+Disallow: /amazon/callback
+Disallow: /internal
+
+Sitemap: https://verito.online/sitemap.xml

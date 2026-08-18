@@ -1,1 +1,15 @@
-[FILE_TOO_LARGE]: The combined read_files output exceeded the 100,000 character hard limit. This file was truncated after 0 characters. Read it separately or use code_search for the relevant section.
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Verito — sitemap.xml
+     Generated from src/seo.config.ts (PUBLIC_PAGES, indexable only).
+     Keep in sync with src/convex/seo/engine/sitemap.ts. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://verito.online/</loc>
+  </url>
+  <url>
+    <loc>https://verito.online/terms</loc>
+  </url>
+  <url>
+    <loc>https://verito.online/privacy</loc>
+  </url>
+</urlset>
