@@ -1,111 +1,79 @@
 "use node";
 
 /**
- * AmazonDataProvider — the clean server-side abstraction (spec §10).
- *
- *   AMAZON SP-API
- *      ↓
- *   AMAZON SERVICES (finances / inbound / inventory / reports)
- *      ↓
- *   AmazonDataProvider (this module — token lifecycle + facades)
- *      ↓
- *   NORMALIZED DATA (normalizer.ts)
- *      ↓
- *   REIMBURSEMENT ENGINE (engine.ts)
- *
- * Frontend components never call Amazon directly; the reimbursement engine
- * never depends on Amazon response formats. The provider owns the LWA
- * access-token lifecycle (refresh + in-process cache) so callers just ask for
- * domain data.
+ * Amazon data provider — wraps SP-API service modules behind a single
+ * class that manages token refresh and delegates to the domain-specific
+ * service functions.
  */
 
-import { refreshAccessToken } from "./authService";
 import { getAmazonConfig, getEncryptionKey } from "./env";
 import { decryptToken } from "./encryption";
-import { fetchFinancialEvents } from "./financesService";
-import { fetchInboundShipments, fetchShipmentItems } from "./inboundService";
-import { fetchInventorySummaries } from "./inventoryService";
-import { fetchSettlementReportText } from "./reportsService";
-import type { AmazonConfig } from "./env";
-import type { RegionCode } from "./config";
-import type { AmazonShipment, AmazonShipmentItem, AmazonInventorySummary } from "./normalizer";
+import { refreshAccessToken } from "./authService";
+import { getFinancialEvents as fetchFinancialEvents } from "./financesService";
+import { getInboundShipments as fetchInboundShipments, getInboundItems as fetchInboundItems } from "./inboundService";
+import { getInventorySummaries as fetchInventorySummaries } from "./inventoryService";
+import { getSettlementReportText as fetchSettlementReportText } from "./reportsService";
+import type { AmazonFinancialEventsPayload } from "./normalizer";
+import type { AmazonShipmentItem } from "./normalizer";
+import type { AmazonInventorySummary } from "./normalizer";
 
-interface CachedToken {
-  accessToken: string;
-  expiresAt: number;
-}
-
-/** Per-process access-token cache (1h validity, refreshed pre-emptively). */
-const tokenCache = new Map<string, CachedToken>();
-
-export interface ProviderOptions {
+export interface AmazonDataProviderConfig {
   userId: string;
   encryptedRefreshToken: string;
-  region: RegionCode;
+  region: string;
 }
 
 export class AmazonDataProvider {
-  private config: AmazonConfig;
-  private refreshToken: string;
-  private cacheKey: string;
+  private accessToken: string | null = null;
+  private tokenExpiresAt = 0;
+  private readonly config: AmazonDataProviderConfig;
+  private readonly region: string;
 
-  constructor(opts: ProviderOptions) {
-    this.config = getAmazonConfig();
-    this.refreshToken = decryptToken(
-      opts.encryptedRefreshToken,
-      getEncryptionKey(),
-    );
-    this.cacheKey = `${opts.userId}:${opts.region}`;
+  constructor(config: AmazonDataProviderConfig) {
+    this.config = config;
+    this.region = config.region;
   }
 
-  get marketplaceId(): string {
-    return this.config.marketplaceId;
-  }
-
-  get region(): RegionCode {
-    return this.config.region;
-  }
-
-  /** Short-lived access token, refreshed from the stored refresh token. */
-  async accessToken(): Promise<string> {
-    const cached = tokenCache.get(this.cacheKey);
-    if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
-      return cached.accessToken;
+  private async getAccessToken(): Promise<string> {
+    if (this.accessToken && Date.now() < this.tokenExpiresAt - 60_000) {
+      return this.accessToken;
     }
-    const { accessToken, expiresIn } = await refreshAccessToken(
-      this.config,
-      this.refreshToken,
-    );
-    tokenCache.set(this.cacheKey, {
-      accessToken,
-      expiresAt: Date.now() + expiresIn * 1000,
-    });
-    return accessToken;
+
+    const appConfig = getAmazonConfig();
+    const encryptionKey = getEncryptionKey();
+    const refreshToken = decryptToken(this.config.encryptedRefreshToken, encryptionKey);
+    const result = await refreshAccessToken(appConfig, refreshToken);
+
+    this.accessToken = result.accessToken;
+    this.tokenExpiresAt = Date.now() + result.expiresIn * 1000;
+    return this.accessToken;
   }
 
-  /* ─────────────────────────── Domain facades ─────────────────────────── */
-
-  async getFinancialEvents(after: Date, before: Date) {
-    return fetchFinancialEvents(await this.accessToken(), this.config, {
-      postedAfter: after,
-      postedBefore: before,
-    });
+  async getFinancialEvents(
+    postedAfter: Date,
+    postedBefore: Date,
+  ): Promise<AmazonFinancialEventsPayload> {
+    const token = await this.getAccessToken();
+    return fetchFinancialEvents(token, this.region as any, postedAfter, postedBefore);
   }
 
-  async getInboundShipments(): Promise<AmazonShipment[]> {
-    return fetchInboundShipments(await this.accessToken(), this.config);
+  async getInboundShipments() {
+    const token = await this.getAccessToken();
+    return fetchInboundShipments(token, this.region as any);
   }
 
   async getInboundItems(shipmentId: string): Promise<AmazonShipmentItem[]> {
-    return fetchShipmentItems(await this.accessToken(), this.config, shipmentId);
+    const token = await this.getAccessToken();
+    return fetchInboundItems(token, this.region as any, shipmentId);
   }
 
   async getInventorySummaries(): Promise<AmazonInventorySummary[]> {
-    return fetchInventorySummaries(await this.accessToken(), this.config);
+    const token = await this.getAccessToken();
+    return fetchInventorySummaries(token, this.region as any);
   }
 
-  /** Settlement report text, or null when unavailable. */
   async getSettlementReportText(): Promise<string | null> {
-    return fetchSettlementReportText(await this.accessToken(), this.config);
+    const token = await this.getAccessToken();
+    return fetchSettlementReportText(token, this.region as any);
   }
 }
