@@ -9,13 +9,14 @@
 import { getAmazonConfig, getEncryptionKey } from "./env";
 import { decryptToken } from "./encryption";
 import { refreshAccessToken } from "./authService";
-import { getFinancialEvents as fetchFinancialEvents } from "./financesService";
-import { getInboundShipments as fetchInboundShipments, getInboundItems as fetchInboundItems } from "./inboundService";
-import { getInventorySummaries as fetchInventorySummaries } from "./inventoryService";
-import { getSettlementReportText as fetchSettlementReportText } from "./reportsService";
+import { fetchFinancialEvents } from "./financesService";
+import { fetchInboundShipments, fetchShipmentItems } from "./inboundService";
+import { fetchInventorySummaries } from "./inventoryService";
+import { fetchSettlementReportText } from "./reportsService";
 import type { AmazonFinancialEventsPayload } from "./normalizer";
 import type { AmazonShipmentItem } from "./normalizer";
 import type { AmazonInventorySummary } from "./normalizer";
+import type { AmazonConfig } from "./env";
 
 export interface AmazonDataProviderConfig {
   userId: string;
@@ -26,12 +27,20 @@ export interface AmazonDataProviderConfig {
 export class AmazonDataProvider {
   private accessToken: string | null = null;
   private tokenExpiresAt = 0;
-  private readonly config: AmazonDataProviderConfig;
+  private readonly providerConfig: AmazonDataProviderConfig;
   private readonly region: string;
+  private appConfig: AmazonConfig | null = null;
 
   constructor(config: AmazonDataProviderConfig) {
-    this.config = config;
+    this.providerConfig = config;
     this.region = config.region;
+  }
+
+  private getConfig(): AmazonConfig {
+    if (!this.appConfig) {
+      this.appConfig = getAmazonConfig();
+    }
+    return this.appConfig;
   }
 
   private async getAccessToken(): Promise<string> {
@@ -39,9 +48,9 @@ export class AmazonDataProvider {
       return this.accessToken;
     }
 
-    const appConfig = getAmazonConfig();
+    const appConfig = this.getConfig();
     const encryptionKey = getEncryptionKey();
-    const refreshToken = decryptToken(this.config.encryptedRefreshToken, encryptionKey);
+    const refreshToken = decryptToken(this.providerConfig.encryptedRefreshToken, encryptionKey);
     const result = await refreshAccessToken(appConfig, refreshToken);
 
     this.accessToken = result.accessToken;
@@ -54,26 +63,26 @@ export class AmazonDataProvider {
     postedBefore: Date,
   ): Promise<AmazonFinancialEventsPayload> {
     const token = await this.getAccessToken();
-    return fetchFinancialEvents(token, this.region as any, postedAfter, postedBefore);
+    return fetchFinancialEvents(token, this.getConfig(), { postedAfter, postedBefore }) as Promise<AmazonFinancialEventsPayload>;
   }
 
   async getInboundShipments() {
     const token = await this.getAccessToken();
-    return fetchInboundShipments(token, this.region as any);
+    return fetchInboundShipments(token, this.getConfig());
   }
 
   async getInboundItems(shipmentId: string): Promise<AmazonShipmentItem[]> {
     const token = await this.getAccessToken();
-    return fetchInboundItems(token, this.region as any, shipmentId);
+    return fetchShipmentItems(token, this.getConfig(), shipmentId);
   }
 
   async getInventorySummaries(): Promise<AmazonInventorySummary[]> {
     const token = await this.getAccessToken();
-    return fetchInventorySummaries(token, this.region as any);
+    return fetchInventorySummaries(token, this.getConfig());
   }
 
   async getSettlementReportText(): Promise<string | null> {
     const token = await this.getAccessToken();
-    return fetchSettlementReportText(token, this.region as any);
+    return fetchSettlementReportText(token, this.getConfig());
   }
 }

@@ -26,6 +26,7 @@ import type * as amazon_normalizer from "../amazon/normalizer.js";
 import type * as amazon_policyEngine from "../amazon/policyEngine.js";
 import type * as amazon_priority from "../amazon/priority.js";
 import type * as amazon_provider from "../amazon/provider.js";
+import type * as amazon_providerMode from "../amazon/providerMode.js";
 import type * as amazon_queries from "../amazon/queries.js";
 import type * as amazon_reconciliation from "../amazon/reconciliation.js";
 import type * as amazon_reportsService from "../amazon/reportsService.js";
@@ -89,6 +90,7 @@ declare const fullApi: ApiFromModules<{
   "amazon/policyEngine": typeof amazon_policyEngine;
   "amazon/priority": typeof amazon_priority;
   "amazon/provider": typeof amazon_provider;
+  "amazon/providerMode": typeof amazon_providerMode;
   "amazon/queries": typeof amazon_queries;
   "amazon/reconciliation": typeof amazon_reconciliation;
   "amazon/reportsService": typeof amazon_reportsService;
