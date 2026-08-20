@@ -7,12 +7,14 @@ export const ROLES = {
   ADMIN: "admin",
   USER: "user",
   MEMBER: "member",
+  PROVIDER: "provider",
 } as const;
 
 export const roleValidator = v.union(
   v.literal(ROLES.ADMIN),
   v.literal(ROLES.USER),
   v.literal(ROLES.MEMBER),
+  v.literal(ROLES.PROVIDER),
 );
 export type Role = Infer<typeof roleValidator>;
 

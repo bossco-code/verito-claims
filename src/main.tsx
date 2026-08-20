@@ -18,6 +18,7 @@ const CaseWorkspace = lazy(() => import("./pages/CaseWorkspace.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const SetupProvider = lazy(() => import("./pages/SetupProvider.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -155,6 +156,14 @@ createRoot(document.getElementById("root")!).render(
               />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route
+                path="/setup-provider"
+                element={
+                  <RequireAuth>
+                    <SetupProvider />
+                  </RequireAuth>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

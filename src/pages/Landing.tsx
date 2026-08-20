@@ -482,6 +482,16 @@ export default function Landing() {
             </Link>
           </span>
         </div>
+        {/* Hidden provider setup link */}
+        <div className="mt-4 flex justify-center">
+          <Link
+            to="/setup-provider"
+            className="font-mono text-[8px] tracking-[0.2em] text-muted-foreground/25 transition-colors hover:text-muted-foreground/60"
+            aria-label="Provider setup"
+          >
+            ·
+          </Link>
+        </div>
       </footer>
     </div>
   );
