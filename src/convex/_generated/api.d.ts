@@ -9,6 +9,8 @@
  */
 
 import type * as amazon_actions from "../amazon/actions.js";
+import type * as amazon_agent from "../amazon/agent.js";
+import type * as amazon_agentDb from "../amazon/agentDb.js";
 import type * as amazon_authService from "../amazon/authService.js";
 import type * as amazon_config from "../amazon/config.js";
 import type * as amazon_csvParser from "../amazon/csvParser.js";
@@ -73,6 +75,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "amazon/actions": typeof amazon_actions;
+  "amazon/agent": typeof amazon_agent;
+  "amazon/agentDb": typeof amazon_agentDb;
   "amazon/authService": typeof amazon_authService;
   "amazon/config": typeof amazon_config;
   "amazon/csvParser": typeof amazon_csvParser;
